@@ -5,13 +5,51 @@
 preguntar_oracion(FraseValida) :-
     write('Por favor, ingrese los datos de su viaje, como el origen, el destino, la aerolinea en la que desea viajar, la clase en la que desea viajar y su presupuesto:\n'),
     readln(Frase, _, _, _, lowercase),
-    ( oraciones_restantes(Frase,[])) ->
+    ( oraciones_restantes(Frase,[]) ->
         write('Frase válida.\n'),
-        FraseValida = Frase
-    ;
+        generar_itinerario(Frase);
+
+
+
         write('Frase no válida, inténtelo de nuevo.\n'),
         preguntar_oracion(FraseValida)
     ).
+
+
+generar_itinerario(Frase) :-
+    extraerInfo(Frase, _, Info, []),
+    obtener_datos(Info, Origen, Destino, Aerolinea, Clase, Presupuesto),
+    ( camino_mas_rapido(Origen, Destino, Aerolinea, Clase, Presupuesto, Tiempo, Ruta) ->
+        mostrar_ruta(Ruta, Tiempo)
+    ;
+        write('Lo sentimos, no encontramos vuelos que coincidan con su búsqueda.\n')
+    ).
+
+obtener_datos(Info, Origen, Destino, Aerolinea, Clase, Presupuesto) :-
+    member(origen(Origen), Info),
+    member(destino(Destino), Info),
+    member(aerolinea(Aerolinea), Info),
+    member(clase(Clase), Info),
+    member(presupuesto(Presupuesto), Info).
+
+mostrar_ruta([], _) :-
+    write('No se encontró ruta.\n').
+
+mostrar_ruta(Ruta, TiempoTotal) :-
+    write('Su itinerario es:\n'),
+    mostrar_segmentos(Ruta),
+    format('Tiempo total estimado de vuelo: ~w horas.\n', [TiempoTotal]).
+
+mostrar_segmentos([]).
+mostrar_segmentos([[Aerolinea, Vuelo, Origen, Destino, Tiempo, Clase, Costo] | Resto]) :-
+    ato(Origen, CiudadO, PaisO),
+    ato(Destino, CiudadD, PaisD),
+    format('Vuelo ~w (~w) desde ~w, ~w hasta ~w, ~w con ~w en clase ~w, duración ~w horas, costo $~w.\n',
+           [Vuelo, Aerolinea, CiudadO, PaisO, CiudadD, PaisD, Aerolinea, Clase, Tiempo, Costo]),
+    mostrar_segmentos(Resto).
+
+
+
 
 iniciar():-
 	write('Bienvenido a TravelAgencyLog, la mejor logica de llegar a su destino. \n'),

@@ -7,11 +7,64 @@ preguntar_oracion(FraseValida) :-
     readln(Frase, _, _, _, lowercase),
     ( oraciones_restantes(Frase,[]) ->
         write('Frase válida.\n'),
-        FraseValida = Frase
-    ;
+        generar_itinerario(Frase);
+
+
+
         write('Frase no válida, inténtelo de nuevo.\n'),
         preguntar_oracion(FraseValida)
     ).
+
+
+generar_itinerario(Frase) :-
+    extraerInfo(Frase, _, Info, []),
+    obtener_datos(Info, OrigenIn, DestinoIn, Aerolinea, Clase, Presupuesto),
+    preparar_datos(OrigenIn, DestinoIn, Origen, Destino),
+    ( camino_mas_rapido(Origen, Destino, Aerolinea, Clase, Presupuesto, Tiempo, Ruta) ->
+        mostrar_ruta(Ruta, Tiempo)
+    ;
+        write('Lo sentimos, no encontramos vuelos que coincidan con su búsqueda.\n')
+    ).
+
+% Traduce ciudad o país a código de aeropuerto
+nombre_a_codigo(Nombre, Codigo) :-
+    ato(Codigo, Nombre, _).  % ciudad
+nombre_a_codigo(Nombre, Codigo) :-
+    ato(Codigo, _, Nombre).  % país
+nombre_a_codigo(Codigo, Codigo) :-
+    ato(Codigo, _, _).       % ya es código
+
+preparar_datos(OrigenIn, DestinoIn, Origen, Destino) :-
+    nombre_a_codigo(OrigenIn, Origen),
+    nombre_a_codigo(DestinoIn, Destino).
+
+
+
+obtener_datos(Info, Origen, Destino, Aerolinea, Clase, Presupuesto) :-
+    member(origen(Origen), Info),
+    member(destino(Destino), Info),
+    member(aerolinea(Aerolinea), Info),
+    member(clase(Clase), Info),
+    member(presupuesto(Presupuesto), Info).
+
+mostrar_ruta([], _) :-
+    write('No se encontró ruta.\n').
+
+mostrar_ruta(Ruta, TiempoTotal) :-
+    write('Su itinerario es:\n'),
+    mostrar_segmentos(Ruta),
+    format('Tiempo total estimado de vuelo: ~w horas.\n', [TiempoTotal]).
+
+mostrar_segmentos([]).
+mostrar_segmentos([[Aerolinea, Vuelo, Origen, Destino, Tiempo, Clase, Costo] | Resto]) :-
+    ato(Origen, CiudadO, PaisO),
+    ato(Destino, CiudadD, PaisD),
+    format('Vuelo ~w (~w) desde ~w, ~w hasta ~w, ~w con ~w en clase ~w, duración ~w horas, costo $~w.\n',
+           [Vuelo, Aerolinea, CiudadO, PaisO, CiudadD, PaisD, Aerolinea, Clase, Tiempo, Costo]),
+    mostrar_segmentos(Resto).
+
+
+
 
 iniciar():-
 	write('Bienvenido a TravelAgencyLog, la mejor logica de llegar a su destino. \n'),
