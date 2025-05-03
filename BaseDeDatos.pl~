@@ -82,8 +82,10 @@ camino_mas_rapido(Origen, Destino, Aerolinea, Clase, Presupuesto, Tiempo, Ruta) 
 % PREDICADOS AUXILIARES
 % ----------------------------
 
-es_lugar(Aeropuerto) :- ato(Aeropuerto, _, _);ato(_, Aeropuerto, _);ato(_, _, Aeropuerto).
-es_lugar(Aeropuerto,Destino):-  ato(Aeropuerto, _, _);ato(_, Aeropuerto, _);ato(_, _, Aeropuerto), Aeropuerto \= Destino.
+es_origen(Aeropuerto) :- ato(Aeropuerto, _, _);ato(_, Aeropuerto, _);ato(_, _, Aeropuerto).
+es_origen(Aeropuerto,Destino):-  ato(Aeropuerto, _, _);ato(_, Aeropuerto, _);ato(_, _, Aeropuerto), Aeropuerto \= Destino.
+es_destino(Destino):- ato(Destino, _, _);ato(_, Destino, _);ato(_, _, Destino).
+es_destino(Origen, Destino) :- ato(Destino, _, _);ato(_, Destino, _);ato(_, _, Destino), Origen \= Destino.
 es_aerolinea(Aerolinea) :- arco(Aerolinea, _, _, _, _, _, _).
 es_clase(Clase) :- member(Clase, [economica, negocios, ambas]).
 
