@@ -42,18 +42,41 @@ falta_dato(presupuesto, Info) :-
     \+ member(presupuesto(_), Info).
 
 preguntar_dato(Dato, Info) :-
-    format('Por favor, indique el/la ~w:\n', [Dato]),
-    readln(Respuesta,_,_,_, lowercase),
-    ( oraciones_restantes(Respuesta,[]) ->
+    mensaje_dato(Dato, Mensaje),
+    write(Mensaje), nl,
+    readln(Respuesta, _, _, _, lowercase),
+    ( Respuesta = ['no'],
+      dato_opcional(Dato) ->
+        write('Ok, se tomará cualquier opción disponible.\n'),
+        marcar_como_cualquiera(Dato, Info, NuevaInfo),
+        verificar_datos_completos(NuevaInfo)
+    ; oraciones_restantes(Respuesta, []) ->
         write('Frase válida.\n'),
         FraseValida = Respuesta,
-        extraerInfo(FraseValida, _, NewInfo, Info),
-        append(NewInfo, Info, MergedInfo),
-        verificar_datos_completos(MergedInfo);
-
+        extraerInfo(FraseValida, _, NewExtracted, Info),
+        append(NewExtracted, Info, MergedInfo),
+        verificar_datos_completos(MergedInfo)
+    ;
         write('Frase no válida, inténtelo de nuevo.\n'),
         preguntar_dato(Dato, Info)
     ).
+
+dato_opcional(aerolinea).
+dato_opcional(clase).
+dato_opcional(presupuesto).
+
+marcar_como_cualquiera(aerolinea, Info, [aerolinea(cualquiera) | Info]).
+marcar_como_cualquiera(clase, Info, [clase(cualquiera) | Info]).
+marcar_como_cualquiera(presupuesto, Info, [presupuesto(infinito) | Info]).
+
+
+mensaje_dato(origen, 'Por favor, indique el origen del vuelo').
+mensaje_dato(destino, 'Por favor, indique el destino del viaje').
+mensaje_dato(aerolinea, '¿Tienes una aerolínea de preferencia? En caso que sí, especifícala').
+mensaje_dato(clase, '¿Tienes una clase de preferencia? En caso que sí, especifícala ').
+mensaje_dato(presupuesto, '¿Tienes un presupuesto disponible para el viaje? En caso que sí, especifícalo').
+
+
 
 agregar_dato(origen, Resp, Info, [origen(Resp) | Info]).
 agregar_dato(destino, Resp, Info, [destino(Resp) | Info]).

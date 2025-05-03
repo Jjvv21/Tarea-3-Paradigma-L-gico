@@ -34,35 +34,58 @@ arco('delta_airlines', 'DL456', 'pty', 'lax', 6, economica, 450).
 % Vuelos de LATAM
 arco('latam_airlines', 'LA501', 'sjo', 'lax', 5, economica, 600).
 
+arco_seleccionado(cualquiera, Vuelo, Orig, Dest, Tiempo, Clase, Costo, Aero) :-
+    arco(Aero, Vuelo, Orig, Dest, Tiempo, Clase, Costo).
+arco_seleccionado(Aero, Vuelo, Orig, Dest, Tiempo, Clase, Costo, Aero) :-
+    arco(Aero, Vuelo, Orig, Dest, Tiempo, Clase, Costo).
+
+presupuesto_valido(infinito, _).
+presupuesto_valido(Limite, Costo) :-
+    Limite \= infinito,
+    Costo =< Limite.
+
 clase_compatible(ambas, _).
 clase_compatible(_, ambas).
+clase_compatible(cualquiera, _).
 clase_compatible(X, X).
+
+actualizar_presupuesto(infinito, _, infinito).
+actualizar_presupuesto(Limite, Costo, Restante) :-
+    Limite \= infinito,
+    Restante is Limite - Costo.
+
+actualizar_presupuesto(infinito, _, infinito).
+actualizar_presupuesto(Limite, Costo, Restante) :-
+    Limite \= infinito,
+    Restante is Limite - Costo.
 
 % ----------------------------
 % REGLAS DE BÚSQUEDA
 % ----------------------------
 
-% Predicado principal para encontrar rutas
+% Predicado principal
 path(Origen, Destino, Aerolinea, Clase, Presupuesto, Costo, Tiempo, Rutas) :-
     path(Origen, Destino, Aerolinea, Clase, Presupuesto, Costo, Tiempo, [], Rutas).
 
 % Caso base: vuelo directo
-path(Origen, Destino, Aerolinea, ClaseDeseada, Presupuesto, Costo, Tiempo, _,
-     [[Aerolinea, Vuelo, Origen, Destino, Tiempo, ClaseVuelo, Costo]]) :-
-    arco(Aerolinea, Vuelo, Origen, Destino, Tiempo, ClaseVuelo, Costo),
+path(Origen, Destino, AerolineaDeseada, ClaseDeseada, Presupuesto, Costo, Tiempo, _,
+     [[Aero, Vuelo, Origen, Destino, Tiempo, ClaseVuelo, Costo]]) :-
+    arco_seleccionado(AerolineaDeseada, Vuelo, Origen, Destino, Tiempo, ClaseVuelo, Costo, Aero),
     clase_compatible(ClaseDeseada, ClaseVuelo),
-    Presupuesto >= Costo.
+    presupuesto_valido(Presupuesto, Costo).
 
 % Caso recursivo: vuelos con escalas
-path(Origen, Destino, Aerolinea, ClaseDeseada, Presupuesto, Costo, Tiempo, Visitados,
-     [[Aerolinea, Vuelo, Origen, Escala, T1, ClaseVuelo, C1]|Ruta]) :-
-    arco(Aerolinea, Vuelo, Origen, Escala, T1, ClaseVuelo, C1),
+path(Origen, Destino, AerolineaDeseada, ClaseDeseada, Presupuesto, Costo, Tiempo, Visitados,
+     [[Aero, Vuelo, Origen, Escala, T1, ClaseVuelo, C1]|Ruta]) :-
+    arco_seleccionado(AerolineaDeseada, Vuelo, Origen, Escala, T1, ClaseVuelo, C1, Aero),
     clase_compatible(ClaseDeseada, ClaseVuelo),
+    presupuesto_valido(Presupuesto, C1),
     \+ member(Escala, Visitados),
-    C1 =< Presupuesto,
-    path(Escala, Destino, Aerolinea, ClaseDeseada, Presupuesto - C1, C2, T2, [Origen|Visitados], Ruta),
+    actualizar_presupuesto(Presupuesto, C1, NuevoPresupuesto),
+    path(Escala, Destino, AerolineaDeseada, ClaseDeseada, NuevoPresupuesto, C2, T2, [Origen|Visitados], Ruta),
     Costo is C1 + C2,
     Tiempo is T1 + T2.
+
 % ----------------------------
 % REGLAS DE FILTRADO
 % ----------------------------
