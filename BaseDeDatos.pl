@@ -28,11 +28,15 @@ arco('american_airlines', 'AA202', 'sjo', 'mia', 2.5, economica, 250).
 arco('american_airlines', 'AA123', 'mia', 'lax', 5, negocios, 800).
 
 % Vuelos de Delta Airlines
-arco('delta_airlines', 'DL333', 'mia', 'PHX', 4, negocios, 700).
+arco('delta_airlines', 'DL333', 'mia', 'phx', 4, negocios, 700).
 arco('delta_airlines', 'DL456', 'pty', 'lax', 6, economica, 450).
 
 % Vuelos de LATAM
 arco('latam_airlines', 'LA501', 'sjo', 'lax', 5, economica, 600).
+
+clase_compatible(ambas, _).
+clase_compatible(_, ambas).
+clase_compatible(X, X).
 
 % ----------------------------
 % REGLAS DE BÚSQUEDA
@@ -43,21 +47,22 @@ path(Origen, Destino, Aerolinea, Clase, Presupuesto, Costo, Tiempo, Rutas) :-
     path(Origen, Destino, Aerolinea, Clase, Presupuesto, Costo, Tiempo, [], Rutas).
 
 % Caso base: vuelo directo
-path(Origen, Destino, Aerolinea, Clase, Presupuesto, Costo, Tiempo, _,
-     [[Aerolinea, Vuelo, Origen, Destino, Tiempo, Clase, Costo]]) :-
-    arco(Aerolinea, Vuelo, Origen, Destino, Tiempo, Clase, Costo),
+path(Origen, Destino, Aerolinea, ClaseDeseada, Presupuesto, Costo, Tiempo, _,
+     [[Aerolinea, Vuelo, Origen, Destino, Tiempo, ClaseVuelo, Costo]]) :-
+    arco(Aerolinea, Vuelo, Origen, Destino, Tiempo, ClaseVuelo, Costo),
+    clase_compatible(ClaseDeseada, ClaseVuelo),
     Presupuesto >= Costo.
 
 % Caso recursivo: vuelos con escalas
-path(Origen, Destino, Aerolinea, Clase, Presupuesto, Costo, Tiempo, Visitados,
-     [[Aerolinea, Vuelo, Origen, Escala, T1, Clase, C1]|Ruta]) :-
-    arco(Aerolinea, Vuelo, Origen, Escala, T1, Clase, C1),
+path(Origen, Destino, Aerolinea, ClaseDeseada, Presupuesto, Costo, Tiempo, Visitados,
+     [[Aerolinea, Vuelo, Origen, Escala, T1, ClaseVuelo, C1]|Ruta]) :-
+    arco(Aerolinea, Vuelo, Origen, Escala, T1, ClaseVuelo, C1),
+    clase_compatible(ClaseDeseada, ClaseVuelo),
     \+ member(Escala, Visitados),
     C1 =< Presupuesto,
-    path(Escala, Destino, Aerolinea, Clase, Presupuesto - C1, C2, T2, [Origen|Visitados], Ruta),
+    path(Escala, Destino, Aerolinea, ClaseDeseada, Presupuesto - C1, C2, T2, [Origen|Visitados], Ruta),
     Costo is C1 + C2,
     Tiempo is T1 + T2.
-
 % ----------------------------
 % REGLAS DE FILTRADO
 % ----------------------------

@@ -7,17 +7,61 @@ preguntar_oracion(FraseValida) :-
     readln(Frase, _, _, _, lowercase),
     ( oraciones_restantes(Frase,[]) ->
         write('Frase válida.\n'),
-        generar_itinerario(Frase);
-
-
+        FraseValida = Frase,
+        extraerInfo(FraseValida, _, Info, []),
+        verificar_datos_completos(Info);
 
         write('Frase no válida, inténtelo de nuevo.\n'),
         preguntar_oracion(FraseValida)
     ).
 
+verificar_datos_completos(Info) :-
+    ( falta_dato(origen, Info) ->
+        preguntar_dato(origen, Info)
+    ; falta_dato(destino, Info) ->
+        preguntar_dato(destino, Info)
+    ; falta_dato(aerolinea, Info) ->
+        preguntar_dato(aerolinea, Info)
+    ; falta_dato(clase, Info) ->
+        preguntar_dato(clase, Info)
+    ; falta_dato(presupuesto, Info) ->
+        preguntar_dato(presupuesto, Info)
+    ; % Si no falta nada, genera itinerario
+        generar_itinerario(Info)
+    ).
 
-generar_itinerario(Frase) :-
-    extraerInfo(Frase, _, Info, []),
+falta_dato(origen, Info) :-
+    \+ member(origen(_), Info).
+falta_dato(destino, Info) :-
+    \+ member(destino(_), Info).
+falta_dato(aerolinea, Info) :-
+    \+ member(aerolinea(_), Info).
+falta_dato(clase, Info) :-
+    \+ member(clase(_), Info).
+falta_dato(presupuesto, Info) :-
+    \+ member(presupuesto(_), Info).
+
+preguntar_dato(Dato, Info) :-
+    format('Por favor, indique el/la ~w:\n', [Dato]),
+    readln(Respuesta,_,_,_, lowercase),
+    ( oraciones_restantes(Respuesta,[]) ->
+        write('Frase válida.\n'),
+        FraseValida = Respuesta,
+        extraerInfo(FraseValida, _, NewInfo, []),
+        append(NewInfo, Info, MergedInfo),
+        verificar_datos_completos(MergedInfo);
+
+        write('Frase no válida, inténtelo de nuevo.\n'),
+        preguntar_dato(Dato, Info)
+    ).
+
+agregar_dato(origen, Resp, Info, [origen(Resp) | Info]).
+agregar_dato(destino, Resp, Info, [destino(Resp) | Info]).
+agregar_dato(aerolinea, Resp, Info, [aerolinea(Resp) | Info]).
+agregar_dato(clase, Resp, Info, [clase(Resp) | Info]).
+agregar_dato(presupuesto, Resp, Info, [presupuesto(Resp) | Info]).
+
+generar_itinerario(Info) :-
     obtener_datos(Info, OrigenIn, DestinoIn, Aerolinea, Clase, Presupuesto),
     preparar_datos(OrigenIn, DestinoIn, Origen, Destino),
     ( camino_mas_rapido(Origen, Destino, Aerolinea, Clase, Presupuesto, Tiempo, Ruta) ->
@@ -25,6 +69,7 @@ generar_itinerario(Frase) :-
     ;
         write('Lo sentimos, no encontramos vuelos que coincidan con su búsqueda.\n')
     ).
+
 
 % Traduce ciudad o país a código de aeropuerto
 nombre_a_codigo(Nombre, Codigo) :-
