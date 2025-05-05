@@ -122,6 +122,9 @@ fuera_de_presupuesto(Presupuesto, Costo) :-
     write(Costo), write(' pero su presupuesto es $'),
     write(Presupuesto), nl.
 
-contiene_barato(Palabra) :-
+contiene_barato(Lista) :-
+    member(barato, Lista).
+
+esBalatro(Palabra) :-
     member(Palabra, [barato]).
 

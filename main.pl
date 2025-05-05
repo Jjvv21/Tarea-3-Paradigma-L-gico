@@ -7,12 +7,12 @@ preguntar_oracion(FraseValida) :-
     write('Por favor, ingrese los datos de su viaje, como el origen, el destino, la aerolinea en la que desea viajar, la clase en la que desea viajar y su presupuesto:\n'),
     readln(Frase, _, _, _, lowercase),
     ( oraciones_restantes(Frase,[]) ->
-        write('Frase válida.\n'),
+
         FraseValida = Frase,
         extraerInfo(FraseValida, _, Info, []),
         verificar_datos_completos(Info);
 
-        write('Frase no válida, inténtelo de nuevo.\n'),
+        write('No te entendi bien, podrias repetir?.\n'),
         preguntar_oracion(FraseValida)
     ).
 
@@ -28,7 +28,7 @@ verificar_datos_completos(Info) :-
     ; falta_dato(presupuesto, Info) ->
         preguntar_dato(presupuesto, Info)
     ; % Si no falta nada, genera itinerario
-        generar_itinerario(Info)
+        (generar_itinerario(Info)->!;(!,fail))
     ).
 
 falta_dato(origen, Info) :-
@@ -54,13 +54,12 @@ preguntar_dato(Dato, Info) :-
         marcar_como_cualquiera(Dato, Info, NuevaInfo),
         verificar_datos_completos(NuevaInfo)
     ; oraciones_restantes(Respuesta, []) ->
-        write('Frase válida.\n'),
         FraseValida = Respuesta,
         extraerInfo(FraseValida, _, NewExtracted, Info),
         append(NewExtracted, Info, MergedInfo),
         verificar_datos_completos(MergedInfo)
     ;
-        write('Frase no válida, inténtelo de nuevo.\n'),
+        write('No te entendi bien, podrias repetir?.\n'),
         preguntar_dato(Dato, Info)
     ).
 
@@ -91,15 +90,15 @@ generar_itinerario(Info) :-
 
 
 usar_camino_barato(Origen, Destino, Aerolinea, Clase, Presupuesto) :-
-    ( camino_mas_barato(Origen, Destino, Aerolinea, Clase, Presupuesto, Costo, Ruta) ->
-        mostrar_ruta(Ruta, Costo)
+    ( camino_mas_barato(Origen, Destino, Aerolinea, Clase, Presupuesto, _, Ruta) ->
+        mostrar_ruta(Ruta)
     ;
         write('Lo sentimos, no encontramos vuelos baratos que coincidan con su búsqueda.\n')
     ).
 
 usar_camino_rapido(Origen, Destino, Aerolinea, Clase, Presupuesto) :-
-    ( camino_mas_rapido(Origen, Destino, Aerolinea, Clase, Presupuesto, Tiempo, Ruta) ->
-        mostrar_ruta(Ruta, Tiempo)
+    ( camino_mas_rapido(Origen, Destino, Aerolinea, Clase, Presupuesto, _, Ruta) ->
+        mostrar_ruta(Ruta)
     ;
         write('Lo sentimos, no encontramos vuelos rápidos que coincidan con su búsqueda.\n')
     ).
@@ -128,13 +127,13 @@ obtener_datos(Info, Origen, Destino, Aerolinea, Clase, Presupuesto) :-
 
 
 
-mostrar_ruta([], _) :-
+mostrar_ruta([]) :-
     write('No se encontró ruta.\n').
 
-mostrar_ruta(Ruta, TiempoTotal) :-
+mostrar_ruta(Ruta) :-
     write('Su itinerario es:\n'),
-    mostrar_segmentos(Ruta),
-    format('Tiempo total estimado de vuelo: ~w horas.\n', [TiempoTotal]).
+    mostrar_segmentos(Ruta).
+
 
 mostrar_segmentos([]).
 mostrar_segmentos([[Aerolinea, Vuelo, Origen, Destino, Tiempo, Clase, Costo] | Resto]) :-
@@ -148,5 +147,8 @@ mostrar_segmentos([[Aerolinea, Vuelo, Origen, Destino, Tiempo, Clase, Costo] | R
 
 
 iniciar():-
-	write('Bienvenido a TravelAgencyLog, la mejor logica de llegar a su destino. \n'),
-	preguntar_oracion(_).
+    write('Bienvenido a TravelAgencyLog, la mejor logica de llegar a su destino. \n'),
+    preguntar_oracion(_),
+    write('Muchas Gracias por usar TravelAgencyLog. \n'),!.
+
+
