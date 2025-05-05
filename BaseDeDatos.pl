@@ -15,12 +15,12 @@ ato('mia', 'miami', 'estados_unidos').
 
 % Vuelos de COPA Airlines
 arco('copa_airlines', 'CM404', 'sjo', 'pty', 1, ambas, 300).
-arco('copa_airlines', 'CM405', 'pty', 'sjo', 1, economica, 280).
+arco('copa_airlines', 'CM405', 'pty', 'sjo', 8, economica, 280).
 arco('copa_airlines', 'CM888', 'pty', 'mia', 3, negocios, 600).
 
 % Vuelos de United Airlines
-arco('united_airlines', 'UA105', 'pty', 'phx', 6, economica, 400).
-arco('united_airlines', 'UA777', 'lax', 'phx', 1, negocios, 200).
+arco('united_airlines', 'UA105', 'pty', 'sjo', 6, economica, 400).
+arco('united_airlines', 'UA777', 'lax', 'sjo', 1, negocios, 200).
 arco('united_airlines', 'UA789', 'sjo', 'phx', 8, negocios, 1200).
 
 % Vuelos de American Airlines
@@ -121,3 +121,10 @@ fuera_de_presupuesto(Presupuesto, Costo) :-
     write('Presupuesto insuficiente. Se requiere $'),
     write(Costo), write(' pero su presupuesto es $'),
     write(Presupuesto), nl.
+
+contiene_barato(Lista) :-
+    member(barato, Lista).
+
+esBalatro(Palabra) :-
+    member(Palabra, [barato]).
+

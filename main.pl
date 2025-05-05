@@ -2,6 +2,7 @@
 :-consult(basededatos).
 
 
+
 preguntar_oracion(FraseValida) :-
     write('Por favor, ingrese los datos de su viaje, como el origen, el destino, la aerolinea en la que desea viajar, la clase en la que desea viajar y su presupuesto:\n'),
     readln(Frase, _, _, _, lowercase),
@@ -40,6 +41,8 @@ falta_dato(clase, Info) :-
     \+ member(clase(_), Info).
 falta_dato(presupuesto, Info) :-
     \+ member(presupuesto(_), Info).
+falta_dato(barato, Info) :-
+    \+ member(barato(_),Info).
 
 preguntar_dato(Dato, Info) :-
     mensaje_dato(Dato, Mensaje),
@@ -79,10 +82,26 @@ mensaje_dato(presupuesto, '¿Tienes un presupuesto disponible para el viaje? En c
 generar_itinerario(Info) :-
     obtener_datos(Info, OrigenIn, DestinoIn, Aerolinea, Clase, Presupuesto),
     preparar_datos(OrigenIn, DestinoIn, Origen, Destino),
+    ( falta_dato(barato,Info) ->
+        usar_camino_rapido(Origen, Destino, Aerolinea, Clase, Presupuesto)
+    ;
+        usar_camino_barato(Origen, Destino, Aerolinea, Clase, Presupuesto)
+    ).
+
+
+
+usar_camino_barato(Origen, Destino, Aerolinea, Clase, Presupuesto) :-
+    ( camino_mas_barato(Origen, Destino, Aerolinea, Clase, Presupuesto, Costo, Ruta) ->
+        mostrar_ruta(Ruta, Costo)
+    ;
+        write('Lo sentimos, no encontramos vuelos baratos que coincidan con su búsqueda.\n')
+    ).
+
+usar_camino_rapido(Origen, Destino, Aerolinea, Clase, Presupuesto) :-
     ( camino_mas_rapido(Origen, Destino, Aerolinea, Clase, Presupuesto, Tiempo, Ruta) ->
         mostrar_ruta(Ruta, Tiempo)
     ;
-        write('Lo sentimos, no encontramos vuelos que coincidan con su búsqueda.\n')
+        write('Lo sentimos, no encontramos vuelos rápidos que coincidan con su búsqueda.\n')
     ).
 
 
@@ -106,6 +125,8 @@ obtener_datos(Info, Origen, Destino, Aerolinea, Clase, Presupuesto) :-
     member(aerolinea(Aerolinea), Info),
     member(clase(Clase), Info),
     member(presupuesto(Presupuesto), Info).
+
+
 
 mostrar_ruta([], _) :-
     write('No se encontró ruta.\n').
