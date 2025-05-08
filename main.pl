@@ -5,7 +5,7 @@
 
 preguntar_oracion(FraseValida) :-
     write('Por favor, ingrese los datos de su viaje, como el origen, el destino, la aerolinea en la que desea viajar, la clase en la que desea viajar y su presupuesto:\n'),
-    readln(Frase, _, _, _, lowercase),
+    leer_frase_minuscula(Frase),
     ( oraciones_restantes(Frase,[]) ->
 
         FraseValida = Frase,
@@ -15,6 +15,13 @@ preguntar_oracion(FraseValida) :-
         write('No te entendi bien, podrias repetir?.\n'),
         preguntar_oracion(FraseValida)
     ).
+
+leer_frase_minuscula(Palabras) :-
+    read_line_to_string(user_input, Linea),
+    string_lower(Linea, Minuscula),
+    split_string(Minuscula, " ", "", PalabrasStrings),
+    maplist(atom_string, Palabras, PalabrasStrings).
+
 
 verificar_datos_completos(Info) :-
     ( falta_dato(origen, Info) ->
@@ -47,7 +54,7 @@ falta_dato(barato, Info) :-
 preguntar_dato(Dato, Info) :-
     mensaje_dato(Dato, Mensaje),
     write(Mensaje), nl,
-    readln(Respuesta, _, _, _, lowercase),
+    leer_frase_minuscula(Dato),
     ( Respuesta = ['no'],
       dato_opcional(Dato) ->
         write('Ok, se tomará cualquier opción disponible.\n'),
