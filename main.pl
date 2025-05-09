@@ -1,0 +1,161 @@
+:-consult(bnf).
+:-consult(basededatos).
+
+
+
+preguntar_oracion(FraseValida) :-
+    write('Por favor, ingrese los datos de su viaje, como el origen, el destino, la aerolinea en la que desea viajar, la clase en la que desea viajar y su presupuesto:\n'),
+    leer_frase_minuscula(Frase),
+    ( oraciones_restantes(Frase,[]) ->
+
+        FraseValida = Frase,
+        extraerInfo(FraseValida, _, Info, []),
+        verificar_datos_completos(Info);
+
+        write('No te entendi bien, podrias repetir?.\n'),
+        preguntar_oracion(FraseValida)
+    ).
+
+leer_frase_minuscula(Palabras) :-
+    read_line_to_string(user_input, Linea),
+    string_lower(Linea, Minuscula),
+    split_string(Minuscula, " ", "", PalabrasStrings),
+    maplist(atom_string, Palabras, PalabrasStrings).
+
+
+verificar_datos_completos(Info) :-
+    ( falta_dato(origen, Info) ->
+        preguntar_dato(origen, Info)
+    ; falta_dato(destino, Info) ->
+        preguntar_dato(destino, Info)
+    ; falta_dato(aerolinea, Info) ->
+        preguntar_dato(aerolinea, Info)
+    ; falta_dato(clase, Info) ->
+        preguntar_dato(clase, Info)
+    ; falta_dato(presupuesto, Info) ->
+        preguntar_dato(presupuesto, Info)
+    ; % Si no falta nada, genera itinerario
+        (generar_itinerario(Info)->!;(!,fail))
+    ).
+
+falta_dato(origen, Info) :-
+    \+ member(origen(_), Info).
+falta_dato(destino, Info) :-
+    \+ member(destino(_), Info).
+falta_dato(aerolinea, Info) :-
+    \+ member(aerolinea(_), Info).
+falta_dato(clase, Info) :-
+    \+ member(clase(_), Info).
+falta_dato(presupuesto, Info) :-
+    \+ member(presupuesto(_), Info).
+falta_dato(barato, Info) :-
+    \+ member(barato(_),Info).
+
+preguntar_dato(Dato, Info) :-
+    mensaje_dato(Dato, Mensaje),
+    write(Mensaje), nl,
+    leer_frase_minuscula(Dato),
+    ( Respuesta = ['no'],
+      dato_opcional(Dato) ->
+        write('Ok, se tomará cualquier opción disponible.\n'),
+        marcar_como_cualquiera(Dato, Info, NuevaInfo),
+        verificar_datos_completos(NuevaInfo)
+    ; oraciones_restantes(Respuesta, []) ->
+        FraseValida = Respuesta,
+        extraerInfo(FraseValida, _, NewExtracted, Info),
+        append(NewExtracted, Info, MergedInfo),
+        verificar_datos_completos(MergedInfo)
+    ;
+        write('No te entendi bien, podrias repetir?.\n'),
+        preguntar_dato(Dato, Info)
+    ).
+
+dato_opcional(aerolinea).
+dato_opcional(clase).
+dato_opcional(presupuesto).
+
+marcar_como_cualquiera(aerolinea, Info, [aerolinea(cualquiera) | Info]).
+marcar_como_cualquiera(clase, Info, [clase(cualquiera) | Info]).
+marcar_como_cualquiera(presupuesto, Info, [presupuesto(infinito) | Info]).
+
+
+mensaje_dato(origen, 'Por favor, indique el origen del vuelo').
+mensaje_dato(destino, 'Por favor, indique el destino del viaje').
+mensaje_dato(aerolinea, '¿Tienes una aerolínea de preferencia? En caso que sí, especifícala').
+mensaje_dato(clase, '¿Tienes una clase de preferencia? En caso que sí, especifícala ').
+mensaje_dato(presupuesto, '¿Tienes un presupuesto disponible para el viaje? En caso que sí, especifícalo').
+
+generar_itinerario(Info) :-
+    obtener_datos(Info, OrigenIn, DestinoIn, Aerolinea, Clase, Presupuesto),
+    preparar_datos(OrigenIn, DestinoIn, Origen, Destino),
+    ( falta_dato(barato,Info) ->
+        usar_camino_rapido(Origen, Destino, Aerolinea, Clase, Presupuesto)
+    ;
+        usar_camino_barato(Origen, Destino, Aerolinea, Clase, Presupuesto)
+    ).
+
+
+
+usar_camino_barato(Origen, Destino, Aerolinea, Clase, Presupuesto) :-
+    ( camino_mas_barato(Origen, Destino, Aerolinea, Clase, Presupuesto, _, Ruta) ->
+        mostrar_ruta(Ruta)
+    ;
+        write('Lo sentimos, no encontramos vuelos baratos que coincidan con su búsqueda.\n')
+    ).
+
+usar_camino_rapido(Origen, Destino, Aerolinea, Clase, Presupuesto) :-
+    ( camino_mas_rapido(Origen, Destino, Aerolinea, Clase, Presupuesto, _, Ruta) ->
+        mostrar_ruta(Ruta)
+    ;
+        write('Lo sentimos, no encontramos vuelos rápidos que coincidan con su búsqueda.\n')
+    ).
+
+
+% Traduce ciudad o país a código de aeropuerto
+nombre_a_codigo(Nombre, Codigo) :-
+    ato(Codigo, Nombre, _).  % ciudad
+nombre_a_codigo(Nombre, Codigo) :-
+    ato(Codigo, _, Nombre).  % país
+nombre_a_codigo(Codigo, Codigo) :-
+    ato(Codigo, _, _).       % ya es código
+
+preparar_datos(OrigenIn, DestinoIn, Origen, Destino) :-
+    nombre_a_codigo(OrigenIn, Origen),
+    nombre_a_codigo(DestinoIn, Destino).
+
+
+
+obtener_datos(Info, Origen, Destino, Aerolinea, Clase, Presupuesto) :-
+    member(origen(Origen), Info),
+    member(destino(Destino), Info),
+    member(aerolinea(Aerolinea), Info),
+    member(clase(Clase), Info),
+    member(presupuesto(Presupuesto), Info).
+
+
+
+mostrar_ruta([]) :-
+    write('No se encontró ruta.\n').
+
+mostrar_ruta(Ruta) :-
+    write('Su itinerario es:\n'),
+    mostrar_segmentos(Ruta).
+
+
+mostrar_segmentos([]).
+mostrar_segmentos([[Aerolinea, Vuelo, Origen, Destino, Tiempo, Clase, Costo] | Resto]) :-
+    ato(Origen, CiudadO, PaisO),
+    ato(Destino, CiudadD, PaisD),
+    format('Vuelo ~w (~w) desde ~w, ~w hasta ~w, ~w con ~w en clase ~w, duración ~w horas, costo $~w.\n',
+           [Vuelo, Aerolinea, CiudadO, PaisO, CiudadD, PaisD, Aerolinea, Clase, Tiempo, Costo]),
+    mostrar_segmentos(Resto).
+
+
+
+
+iniciar():-
+    write('Bienvenido a TravelAgencyLog, la mejor logica de llegar a su destino. \n'),
+    preguntar_oracion(_),
+    write('Muchas Gracias por usar TravelAgencyLog. \n'),!.
+
+
